@@ -260,6 +260,17 @@ export function createHealthChart(d) {
                             if (isPlugged !== undefined) {
                                 return [`🔌 Power: ${isPlugged ? 'Plugged In' : 'On Battery'}`];
                             }
+                        },
+                        label: function(context) {
+                            const dataset = context.dataset;
+                            const value = context.raw;
+                            if (dataset.label === 'Time Left') {
+                                const h = Math.floor(value / 3600);
+                                const m = Math.floor((value % 3600) / 60);
+                                const s = Math.floor(value % 60);
+                                return `${dataset.label}: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                            }
+                            return `${dataset.label}: ${value}`;
                         }
                     }
                 },

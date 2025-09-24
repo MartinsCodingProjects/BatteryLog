@@ -24,17 +24,19 @@ Battery Log is a tool designed to monitor and log battery performance metrics on
    ```
 
 ## Usage
-1. Start the battery logger:
-   ```bash
-   python run_battery_logger.py
-   ```
-2. Start the settings server (required for web interface):
+1. Start the battery logger and settings server:
    ```bash
    python settings_server.py
    ```
-3. View the logged data:
-   - Open `battery_log_visualization.html` in a browser for charts.
-   - Open `battery_log_viewer.html` for tabular data.
+   This will serve the visualization and settings API at:
+   ```
+   http://localhost:8081
+   ```
+2. Open your browser and navigate to:
+   ```
+   http://localhost:8081
+   ```
+   The visualization will load and display the battery data.
 
 ## Configuration
 The application uses a `user_settings.json` file for configuration:
@@ -45,7 +47,7 @@ A template is provided as `user_settings.template.json`. Copy it to `user_settin
 
 ## File Descriptions
 - `run_battery_logger.py`: Main script for logging battery data.
-- `settings_server.py`: HTTP server for handling settings updates from the web interface.
+- `settings_server.py`: HTTP server for serving the visualization and handling settings updates.
 - `battery_log_visualization.html`: Displays interactive charts for logged data.
 - `battery_log_viewer.html`: Displays logged data in a table format.
 - `user_settings.json`: Configuration file (created from template).

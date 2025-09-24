@@ -18,7 +18,7 @@ export function updateCurrentMetrics(d) {
         voltageStatus: d.voltageStatus[d.voltageStatus.length - 1],
         loadSeverity: d.loadSeverity[d.loadSeverity.length - 1],
         cycleCount: d.cycleCount[d.cycleCount.length - 1],
-        timeRange: {
+        time_range: {
             start: firstTime.toLocaleString(),
             end: lastTime.toLocaleString(),
             hours: totalHours.toFixed(1)
@@ -29,10 +29,10 @@ export function updateCurrentMetrics(d) {
     grid.innerHTML = `
         <div class="metric-card time-range">
             <div class="metric-label">Analysis Period</div>
-            <div class="metric-value">${latest.timeRange.hours}h</div>
+            <div class="metric-value">${latest.time_range.hours}h</div>
             <div class="metric-details">
-                From: ${latest.timeRange.start}<br>
-                To: ${latest.timeRange.end}
+                From: ${latest.time_range.start}<br>
+                To: ${latest.time_range.end}
             </div>
         </div>
         <div class="metric-card">

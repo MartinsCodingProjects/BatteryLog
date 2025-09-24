@@ -1,7 +1,7 @@
 // Data fetching and parsing functionality
 import { safeFloat, interpolate } from './utils.js';
 
-export async function fetchData(timeRange = null) {
+export async function fetchData(time_range = null) {
     const response = await fetch('battery_log.csv');
     const text = await response.text();
     console.log('CSV loaded, first 200 chars:', text.slice(0, 200));
@@ -36,11 +36,11 @@ export async function fetchData(timeRange = null) {
 
     // Apply time range filter if provided
     let filteredData = parsedData;
-    if (timeRange) {
+    if (time_range) {
         const now = new Date();
         let startTime;
         
-        switch(timeRange) {
+        switch(time_range) {
             case '1h':
                 startTime = new Date(now - 60 * 60 * 1000);
                 break;
@@ -52,8 +52,8 @@ export async function fetchData(timeRange = null) {
                 break;
             default:
                 // Check if it's a specific date
-                if (timeRange.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    startTime = new Date(timeRange);
+                if (time_range.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    startTime = new Date(time_range);
                     const endTime = new Date(startTime);
                     endTime.setDate(endTime.getDate() + 1);
                     filteredData = parsedData.filter(item => 
@@ -61,7 +61,7 @@ export async function fetchData(timeRange = null) {
                 }
         }
         
-        if (startTime && !timeRange.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (startTime && !time_range.match(/^\d{4}-\d{2}-\d{2}$/)) {
             filteredData = parsedData.filter(item => item.timestamp >= startTime);
         }
     }

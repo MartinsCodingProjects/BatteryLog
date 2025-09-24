@@ -7,9 +7,9 @@ export class BatteryVisualizer {
     constructor() {
         this.charts = {};
         this.settings = null;
-        this.currentTimeRange = '1h';
-        this.autoRefreshEnabled = true;
-        this.autoRefreshInterval = null;
+        this.current_time_range = '1h';
+        this.auto_refresh_enabled = true;
+        this.auto_refresh_interval = null;
         this.uiState = null;
         this.initializeAsync();
     }
@@ -17,13 +17,15 @@ export class BatteryVisualizer {
     async initializeAsync() {
         // Load settings asynchronously
         this.settings = await this.loadSettings();
-        this.currentTimeRange = this.settings.timeRange;
-        this.autoRefreshEnabled = this.settings.autoRefresh;
+        this.current_time_range = this.settings.time_range;
+        this.auto_refresh_enabled = this.settings.auto_refresh;
         
         this.setupTimeControls();
         this.setupAutoRefresh();
         // Apply loaded settings to UI
         this.applySettingsToUI();
+        // Load initial visualizations with settings
+        this.updateVisualizations();
     }
 
     setupAutoRefresh() {
@@ -32,35 +34,35 @@ export class BatteryVisualizer {
         const autoRefreshBtn = document.createElement('button');
         autoRefreshBtn.id = 'autoRefresh';
         autoRefreshBtn.classList.add('auto-refresh');
-        autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.autoRefreshEnabled ? 'On' : 'Off'}`;
-        if (this.autoRefreshEnabled) autoRefreshBtn.classList.add('active');
+        autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.auto_refresh_enabled ? 'On' : 'Off'}`;
+        if (this.auto_refresh_enabled) autoRefreshBtn.classList.add('active');
         refreshControls.appendChild(autoRefreshBtn);
 
         // Add auto-refresh interval selector
         const intervalSelect = document.createElement('select');
         intervalSelect.id = 'refreshInterval';
         intervalSelect.classList.add('time-select');
-        intervalSelect.style.display = this.autoRefreshEnabled ? 'block' : 'none';
+        intervalSelect.style.display = this.auto_refresh_enabled ? 'block' : 'none';
         intervalSelect.innerHTML = `
             <option value="5000">5 seconds</option>
             <option value="10000">10 seconds</option>
             <option value="30000">30 seconds</option>
             <option value="60000">1 minute</option>
         `;
-        intervalSelect.value = this.settings.refreshInterval;
+        intervalSelect.value = this.settings.refresh_interval;
         refreshControls.appendChild(intervalSelect);
 
         // Toggle auto-refresh
         autoRefreshBtn.addEventListener('click', () => {
-            this.autoRefreshEnabled = !this.autoRefreshEnabled;
-            this.settings.autoRefresh = this.autoRefreshEnabled;
+            this.auto_refresh_enabled = !this.auto_refresh_enabled;
+            this.settings.auto_refresh = this.auto_refresh_enabled;
             this.saveSettings();
             
-            autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.autoRefreshEnabled ? 'On' : 'Off'}`;
-            autoRefreshBtn.classList.toggle('active', this.autoRefreshEnabled);
-            intervalSelect.style.display = this.autoRefreshEnabled ? 'block' : 'none';
+            autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.auto_refresh_enabled ? 'On' : 'Off'}`;
+            autoRefreshBtn.classList.toggle('active', this.auto_refresh_enabled);
+            intervalSelect.style.display = this.auto_refresh_enabled ? 'block' : 'none';
             
-            if (this.autoRefreshEnabled) {
+            if (this.auto_refresh_enabled) {
                 this.startAutoRefresh(parseInt(intervalSelect.value));
             } else {
                 this.stopAutoRefresh();
@@ -69,17 +71,17 @@ export class BatteryVisualizer {
 
         // Handle interval changes
         intervalSelect.addEventListener('change', (e) => {
-            this.settings.refreshInterval = parseInt(e.target.value);
+            this.settings.refresh_interval = parseInt(e.target.value);
             this.saveSettings();
             
-            if (this.autoRefreshEnabled) {
+            if (this.auto_refresh_enabled) {
                 this.startAutoRefresh(parseInt(e.target.value));
             }
         });
         
         // Start auto-refresh if enabled
-        if (this.autoRefreshEnabled) {
-            this.startAutoRefresh(this.settings.refreshInterval);
+        if (this.auto_refresh_enabled) {
+            this.startAutoRefresh(this.settings.refresh_interval);
         }
     }
 
@@ -87,7 +89,7 @@ export class BatteryVisualizer {
         this.stopAutoRefresh(); // Clear any existing interval
         this.preserveUIState(); // Preserve UI state before refresh
         this.updateVisualizations(); // Update immediately
-        this.autoRefreshInterval = setInterval(() => {
+        this.auto_refresh_interval = setInterval(() => {
             console.log('Auto-refreshing visualizations...');
             this.preserveUIState(); // Preserve UI state before each refresh
             this.updateVisualizations();
@@ -96,9 +98,9 @@ export class BatteryVisualizer {
     }
 
     stopAutoRefresh() {
-        if (this.autoRefreshInterval) {
-            clearInterval(this.autoRefreshInterval);
-            this.autoRefreshInterval = null;
+        if (this.auto_refresh_interval) {
+            clearInterval(this.auto_refresh_interval);
+            this.auto_refresh_interval = null;
         }
     }
 
@@ -119,24 +121,24 @@ export class BatteryVisualizer {
                         daySelector.appendChild(option);
                     });
                 }
-                this.currentTimeRange = daySelector.value || this.settings.customDate;
+                this.current_time_range = daySelector.value || this.settings.custom_date;
             } else {
                 daySelector.style.display = 'none';
-                this.currentTimeRange = value;
+                this.current_time_range = value;
             }
             
-            this.settings.timeRange = this.currentTimeRange;
+            this.settings.time_range = this.current_time_range;
             if (value === 'custom' && daySelector.value) {
-                this.settings.customDate = daySelector.value;
+                this.settings.custom_date = daySelector.value;
             }
             this.saveSettings();
             this.updateVisualizations();
         });
 
         daySelector.addEventListener('change', (e) => {
-            this.currentTimeRange = e.target.value;
-            this.settings.timeRange = this.currentTimeRange;
-            this.settings.customDate = e.target.value;
+            this.current_time_range = e.target.value;
+            this.settings.time_range = this.current_time_range;
+            this.settings.custom_date = e.target.value;
             this.saveSettings();
             this.updateVisualizations();
         });
@@ -146,7 +148,7 @@ export class BatteryVisualizer {
         // Preserve and restore UI state
         this.preserveUIState();
         
-        const rows = await fetchData(this.currentTimeRange);
+        const rows = await fetchData(this.current_time_range);
         const d = parseData(rows);
         
         updateCurrentMetrics(d);
@@ -185,10 +187,10 @@ export class BatteryVisualizer {
     
     loadSettings() {
         const defaults = {
-            timeRange: '1h',
-            customDate: null,
-            autoRefresh: true,
-            refreshInterval: 60000 // 1 minute
+            time_range: '1h',
+            custom_date: null,
+            auto_refresh: true,
+            refresh_interval: 60000 // 1 minute
         };
         
         try {
@@ -240,14 +242,14 @@ export class BatteryVisualizer {
         const daySelector = document.getElementById('daySelector');
         
         // Set the time range selector to the correct value
-        if (this.currentTimeRange.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (this.current_time_range.match(/^\d{4}-\d{2}-\d{2}$/)) {
             // If it's a date, set to custom and show day selector
             timeRange.value = 'custom';
             daySelector.style.display = 'block';
-            daySelector.value = this.currentTimeRange;
+            daySelector.value = this.current_time_range;
         } else {
             // If it's a preset range, set accordingly
-            timeRange.value = this.currentTimeRange;
+            timeRange.value = this.current_time_range;
             daySelector.style.display = 'none';
         }
         
@@ -256,13 +258,13 @@ export class BatteryVisualizer {
         const intervalSelect = document.getElementById('refreshInterval');
         
         if (autoRefreshBtn) {
-            autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.autoRefreshEnabled ? 'On' : 'Off'}`;
-            autoRefreshBtn.classList.toggle('active', this.autoRefreshEnabled);
+            autoRefreshBtn.innerHTML = `⟳ Auto Refresh: ${this.auto_refresh_enabled ? 'On' : 'Off'}`;
+            autoRefreshBtn.classList.toggle('active', this.auto_refresh_enabled);
         }
         
         if (intervalSelect) {
-            intervalSelect.style.display = this.autoRefreshEnabled ? 'block' : 'none';
-            intervalSelect.value = this.settings.refreshInterval;
+            intervalSelect.style.display = this.auto_refresh_enabled ? 'block' : 'none';
+            intervalSelect.value = this.settings.refresh_interval;
         }
     }
 }
