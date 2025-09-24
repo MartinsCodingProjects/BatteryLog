@@ -12,11 +12,13 @@ from .battery_logger_main import BatteryLogger
 from .battery_detector import BatteryDetectorFactory
 from .utils import PlatformDetector, SystemUtilities
 from .system_metrics import SystemMetrics
+from . import estimations
 
 __all__ = [
     'BatteryLogger',
     'BatteryDetectorFactory', 
     'PlatformDetector',
     'SystemUtilities',
-    'SystemMetrics'
+    'SystemMetrics',
+    'estimations'
 ]

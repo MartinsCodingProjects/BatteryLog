@@ -25,7 +25,63 @@ export function updateCurrentMetrics(d) {
         }
     };
 
+    // Load battery estimations
+    loadBatteryEstimations().then(estimations => {
+        displayMetrics(latest, estimations);
+    }).catch(error => {
+        console.warn('Failed to load battery estimations:', error);
+        displayMetrics(latest, null);
+    });
+}
+
+async function loadBatteryEstimations() {
+    try {
+        const response = await fetch('http://localhost:8081/get_estimations');
+        if (response.ok) {
+            return await response.json();
+        }
+    } catch (e) {
+        console.warn('Estimations server not accessible:', e);
+    }
+    return null;
+}
+
+function displayMetrics(latest, estimations) {
     const grid = document.getElementById('current-metrics');
+    
+    // Format estimation time helper function
+    function formatEstimationTime(minutes) {
+        if (!minutes || isNaN(minutes)) return 'N/A';
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.floor(minutes % 60);
+        return `${hours}h ${mins}m`;
+    }
+    
+    // Build estimations HTML
+    let estimationsHTML = '';
+    if (estimations && estimations.time_left) {
+        const confidence = Math.round((estimations.time_left.confidence || 0) * 100);
+        const confidenceColor = confidence > 70 ? '#2ECC40' : confidence > 40 ? '#FF851B' : '#FF4136';
+        
+        estimationsHTML = `
+            <div class="metric-card estimation">
+                <div class="metric-label">🔋 Estimated Time Left</div>
+                <div class="metric-value">${formatEstimationTime(estimations.time_left.time_left_minutes)}</div>
+                <div class="metric-details">
+                    Based on ${estimations.time_left.intervals_used} historical intervals<br>
+                    <span style="color: ${confidenceColor}">Confidence: ${confidence}%</span>
+                </div>
+            </div>
+            <div class="metric-card estimation">
+                <div class="metric-label">⚡ Full Battery Time</div>
+                <div class="metric-value">${formatEstimationTime(estimations.full_battery.full_battery_time_minutes)}</div>
+                <div class="metric-details">
+                    Estimated runtime if fully charged<br>
+                    <span style="color: ${confidenceColor}">Drain rate: ${(estimations.full_battery.average_drain_rate * 60).toFixed(2)}%/hr</span>
+                </div>
+            </div>`;
+    }
+    
     grid.innerHTML = `
         <div class="metric-card time-range">
             <div class="metric-label">Analysis Period</div>
@@ -40,6 +96,7 @@ export function updateCurrentMetrics(d) {
             <div class="metric-value">${latest.battery}%</div>
             <div class="metric-details">Current charge remaining in battery</div>
         </div>
+        ${estimationsHTML}
         <div class="metric-card">
             <div class="metric-label">Battery Health</div>
             <div class="metric-value">${latest.health}%</div>

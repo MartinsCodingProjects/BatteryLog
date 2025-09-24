@@ -5,6 +5,7 @@ Simple HTTP server to handle settings updates for the Battery Log visualization
 
 import json
 import os
+import pandas as pd
 from http.server import HTTPServer, BaseHTTPRequestHandler, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs
 import threading
@@ -84,6 +85,37 @@ class CombinedHandler(SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps(settings).encode())
 
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode())
+            elif self.path == '/get_estimations':
+                try:
+                    # Load battery data
+                    csv_file = 'battery_log.csv'
+                    if os.path.exists(csv_file):
+                        import pandas as pd
+                        from battery_monitor.estimations import get_battery_estimations
+                        
+                        data = pd.read_csv(csv_file)
+                        data['timestamp'] = pd.to_datetime(data['timestamp'])
+                        
+                        estimations = get_battery_estimations(data)
+                        
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(estimations, default=str).encode())
+                    else:
+                        self.send_response(404)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": "Battery log file not found"}).encode())
+                        
                 except Exception as e:
                     self.send_response(500)
                     self.send_header('Content-type', 'application/json')
