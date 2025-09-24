@@ -200,42 +200,57 @@ def estimate_time_left_last_interval(data):
     if not pd.api.types.is_datetime64_any_dtype(data['timestamp']):
         data['timestamp'] = pd.to_datetime(data['timestamp'])
     
-    # Find the last continuous battery interval
-    last_interval = None
+    # Find the most recent battery interval (even if it's currently ongoing)
+    intervals = []
     start_idx = None
     max_gap_minutes = 5
     
-    for i in range(len(data) - 1, 0, -1):  # Search backwards
+    # First, find all battery intervals (same logic as main function)
+    for i in range(1, len(data)):
         current_plugged = data['power_plugged'].iloc[i]
         prev_plugged = data['power_plugged'].iloc[i-1]
         
-        # Check for time gap
+        # Check for time gap (data interruption)
         time_gap = (data['timestamp'].iloc[i] - data['timestamp'].iloc[i-1]).total_seconds() / 60
         
         if current_plugged == False and prev_plugged == False and time_gap <= max_gap_minutes:
             if start_idx is None:
-                start_idx = i  # End of interval (searching backwards)
+                start_idx = i - 1
         else:
             if start_idx is not None:
-                last_interval = (i, start_idx)  # (start, end) of last interval
-                break
+                end_idx = i - 1
+                if end_idx > start_idx:
+                    intervals.append((start_idx, end_idx))
+                start_idx = None
+
+    # Handle case where data ends while on battery
+    if start_idx is not None and start_idx < len(data) - 1:
+        intervals.append((start_idx, len(data) - 1))
     
-    # Handle case where we're currently in a battery interval
-    if start_idx is not None and last_interval is None:
-        # Find the beginning of this interval
-        for j in range(start_idx - 1, -1, -1):
-            if j == 0 or data['power_plugged'].iloc[j] == True:
-                last_interval = (j + 1 if j > 0 else 0, start_idx)
-                break
+    # If no intervals found, try to find any recent battery usage
+    if not intervals:
+        # Look for any battery usage in recent data
+        battery_indices = []
+        for i in range(len(data)):
+            if data['power_plugged'].iloc[i] == False:
+                battery_indices.append(i)
+        
+        if len(battery_indices) >= 2:
+            # Use the last few battery data points
+            start_idx = battery_indices[-min(len(battery_indices), 10)]  # Last 10 or fewer
+            end_idx = battery_indices[-1]
+            intervals = [(start_idx, end_idx)]
     
-    if not last_interval:
+    if not intervals:
         return {
             'time_left_minutes': None,
             'confidence': 0,
-            'drain_rate': None
+            'drain_rate': None,
+            'debug': 'No battery intervals found'
         }
     
-    start, end = last_interval
+    # Use the last (most recent) interval
+    start, end = intervals[-1]
     start_percent = data['percentage'].iloc[start]
     end_percent = data['percentage'].iloc[end]
     current_percent = data['percentage'].iloc[-1]
@@ -243,23 +258,28 @@ def estimate_time_left_last_interval(data):
     end_time = data['timestamp'].iloc[end]
     time_diff = (end_time - start_time).total_seconds() / 60  # in minutes
     
-    if time_diff >= 2 and start_percent > end_percent and (start_percent - end_percent) >= 0.5:
+    # More lenient requirements for last interval
+    if time_diff >= 1 and start_percent > end_percent and (start_percent - end_percent) >= 0.1:
         drain_rate = (start_percent - end_percent) / time_diff  # % per minute
         time_left = current_percent / drain_rate if drain_rate > 0 else None
         
-        # Confidence based on interval duration (longer = more confident)
-        confidence = min(time_diff / 30.0, 1.0)  # Max confidence at 30+ minutes
+        # Confidence based on interval duration and battery drop
+        duration_confidence = min(time_diff / 15.0, 1.0)  # Max confidence at 15+ minutes
+        drop_confidence = min((start_percent - end_percent) / 2.0, 1.0)  # Max confidence at 2%+ drop
+        confidence = (duration_confidence + drop_confidence) / 2
         
         return {
             'time_left_minutes': time_left,
             'confidence': confidence,
-            'drain_rate': drain_rate
+            'drain_rate': drain_rate,
+            'debug': f'Interval: {start}-{end}, Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%'
         }
     
     return {
         'time_left_minutes': None,
         'confidence': 0,
-        'drain_rate': None
+        'drain_rate': None,
+        'debug': f'Invalid interval: Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%'
     }
 
 def estimate_full_battery_last_interval(data):

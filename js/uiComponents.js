@@ -27,6 +27,7 @@ export function updateCurrentMetrics(d) {
 
     // Load battery estimations
     loadBatteryEstimations().then(estimations => {
+        console.log('Battery estimations loaded:', estimations); // Debug log
         displayMetrics(latest, estimations);
     }).catch(error => {
         console.warn('Failed to load battery estimations:', error);
@@ -81,6 +82,7 @@ function displayMetrics(latest, estimations) {
                 <div class="metric-details">
                     Based on most recent battery usage<br>
                     <span style="color: ${lastConfidenceColor}">Confidence: ${lastConfidence}%</span>
+                    ${estimations.time_left_last_interval?.debug ? '<br><small>Debug: ' + estimations.time_left_last_interval.debug + '</small>' : ''}
                 </div>
             </div>
             <div class="metric-card estimation">
@@ -96,7 +98,8 @@ function displayMetrics(latest, estimations) {
                 <div class="metric-value">${formatEstimationTime(estimations.full_battery_last_interval?.full_battery_time_minutes)}</div>
                 <div class="metric-details">
                     Based on current usage pattern<br>
-                    <span style="color: ${lastConfidenceColor}">Drain rate: ${(estimations.full_battery_last_interval?.drain_rate * 60).toFixed(2)}%/hr</span>
+                    <span style="color: ${lastConfidenceColor}">Drain rate: ${(estimations.full_battery_last_interval?.drain_rate * 60 || 0).toFixed(2)}%/hr</span>
+                    ${estimations.full_battery_last_interval?.debug ? '<br><small>Debug: ' + estimations.full_battery_last_interval.debug + '</small>' : ''}
                 </div>
             </div>`;
     }
