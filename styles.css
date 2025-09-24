@@ -1,0 +1,223 @@
+body { 
+    font-family: Arial, sans-serif; 
+    margin: 2em; 
+    background: #f9f9f9; 
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Enhanced styling for calibration warnings */
+.chart-description {
+    background: #f8f9fa;
+    padding: 1em;
+    border-radius: 8px;
+    margin: 0.5em 0;
+    border-left: 4px solid #0074D9;
+}
+
+.chart-description b {
+    color: #0074D9;
+}
+
+/* Add visual distinction for warning descriptions */
+.chart-description .warning-info {
+    color: #FF6B35;
+    font-weight: bold;
+}
+
+.analysis-info {
+    font-size: 0.85em;
+    color: #666;
+    margin: 5px 0 10px 0;
+    font-style: italic;
+    line-height: 1.3;
+}
+
+.metric-details {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+h1 { 
+    color: #333; 
+    margin-bottom: 1em;
+}
+
+.time-controls {
+    display: flex;
+    gap: 1em;
+    margin: 1em 0;
+    align-items: center;
+}
+
+.time-select {
+    padding: 0.75em 1.5em;
+    font-size: 1em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.time-select:hover {
+    border-color: #0074D9;
+}
+
+#refresh { 
+    padding: 0.75em 1.5em; 
+    font-size: 1em;
+    background: #0074D9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+#refresh:hover {
+    background: #0063b8;
+}
+
+.auto-refresh {
+    padding: 0.75em 1.5em;
+    font-size: 1em;
+    border: 2px solid #0074D9;
+    color: #0074D9;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.auto-refresh:hover {
+    background: #f0f8ff;
+}
+
+.auto-refresh.active {
+    background: #0074D9;
+    color: white;
+}
+
+#refreshInterval {
+    max-width: 120px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 2em;
+}
+
+.metric-card {
+    background: white;
+    padding: 1.2em;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.metric-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 0.5em;
+}
+
+.metric-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #0074D9;
+    margin: 0.5em 0;
+}
+
+.metric-details {
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.4;
+    margin-top: 0.5em;
+}
+
+.time-range {
+    grid-column: 1 / -1;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.chart-section { 
+    background: white; 
+    padding: 1.5em; 
+    margin: 1.5em 0; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+}
+
+.scatter-container { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5em; 
+    margin: 1em 0; 
+}
+
+.scatter-item { 
+    background: white; 
+    padding: 1.2em; 
+    border-radius: 8px; 
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1); 
+}
+
+.scatter-item b {
+    display: block;
+    margin-bottom: 0.8em;
+    color: #666;
+    font-size: 0.95em;
+}
+
+.chart-description { 
+    background: #f0f8ff; 
+    padding: 1.2em; 
+    border-left: 4px solid #0074D9; 
+    margin: 0.5em 0; 
+    border-radius: 4px; 
+    font-size: 0.95em;
+}
+
+.chart-description b {
+    color: #0074D9;
+}
+
+.performance-note {
+    background: #fffacd !important; 
+    border-left: 4px solid #ff8c00 !important;
+    margin-bottom: 2em;
+}
+
+canvas {
+    width: 100% !important;
+    max-height: 400px;
+    margin-top: 1em;
+}
+
+@media (max-width: 768px) {
+    body {
+        margin: 1em;
+    }
+
+    .scatter-container {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}

@@ -1,0 +1,20 @@
+# Ignore local CSV files
+*.csv
+
+# Ignore battery calibration guide
+battery_calibration_guide.md
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore virtual environments
+venv/
+.env
+
+# Ignore logs
+*.log

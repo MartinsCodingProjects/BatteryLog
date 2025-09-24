@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Battery Log Visualization</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@4.0.1/dist/chartjs-chart-matrix.umd.min.js"></script>
+    <script>
+    // Explicitly register matrix controller and element for Chart.js 4.x
+    if (window.Chart && Chart.registry && Chart.registry.addControllers) {
+        if (window['MatrixController'] && window['MatrixElement']) {
+            Chart.register(window['MatrixController'], window['MatrixElement']);
+        }
+        // Register annotation plugin
+        if (window['chartjs-plugin-annotation']) {
+            Chart.register(window['chartjs-plugin-annotation']);
+        }
+    }
+    </script>
+    <script type="module">
+        import { visualizer } from './js/main.js';
+        
+        // Initialize visualization when document is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('refresh').onclick = () => visualizer.updateVisualizations();
+            visualizer.updateVisualizations();
+        });
+    </script>
+</head>
+<body>
+    <h1>Battery Log Visualization</h1>
+    
+    <!-- Time Range Selection -->
+    <div class="time-controls">
+        <select id="timeRange" class="time-select">
+            <option value="1h">Last Hour</option>
+            <option value="24h">Last 24 Hours</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="custom">Select Day</option>
+        </select>
+        <select id="daySelector" class="time-select" style="display: none;">
+            <!-- Will be populated with available days -->
+        </select>
+        <button id="refresh">Refresh Data</button>
+    </div>
+
+    <!-- Current Metrics -->
+    <div id="current-metrics" class="metrics-grid"></div>
+    
+    <div class="chart-description performance-note">
+        <b>Performance Note:</b> For better performance, this visualization shows only the last 200 log entries.
+    </div>
+    
+    <!-- Main Charts -->
+    <div class="chart-section">
+        <div class="chart-description">
+            <b>Battery Health Overview:</b> Shows battery level, health, voltage stability, and power draw over time.
+            <br><b>🔍 Calibration Detection:</b> Yellow warning markers (⚠️) indicate unexpected rapid battery percentage drops that may signal calibration issues.
+            <br><b>🔌 Power State:</b> Light green background = plugged in/charging, light red background = on battery/draining.
+        </div>
+        <canvas id="batteryHealthChart"></canvas>
+    </div>
+
+    <div class="chart-section">
+        <div class="chart-description">
+            <b>System Resource Usage:</b> CPU, RAM, and disk usage patterns affect battery drain rate.
+            <br><b>🔌 Power State:</b> Background colors show charging state - green tint when plugged in, red tint when on battery.
+        </div>
+        <canvas id="resourceChart"></canvas>
+    </div>
+
+    <!-- Scatter Analysis -->
+    <div class="chart-section">
+        <div class="chart-description">
+            <b>Power Analysis:</b> Relationships between system metrics and power consumption.
+        </div>
+        <div class="scatter-container">
+            <div class="scatter-item">
+                <b>Power Draw vs CPU Usage</b>
+                <p class="analysis-info">Shows how CPU load affects power consumption. Higher CPU usage typically increases power draw.</p>
+                <canvas id="powerVsCpu"></canvas>
+            </div>
+            <div class="scatter-item">
+                <b>Drain Rate vs System Load</b>
+                <p class="analysis-info">Reveals how system activity impacts battery drain rate. Combined CPU/RAM load vs battery drain speed.</p>
+                <canvas id="drainVsLoad"></canvas>
+            </div>
+            <div class="scatter-item">
+                <b>Voltage vs Battery Level</b>
+                <p class="analysis-info">Shows voltage stability as battery depletes. Healthy batteries maintain stable voltage until low charge.</p>
+                <canvas id="voltageVsBattery"></canvas>
+            </div>
+            <div class="scatter-item">
+                <b>Voltage vs Drain Rate</b>
+                <p class="analysis-info">Indicates battery health under load. Voltage drops under heavy drain may signal battery degradation.</p>
+                <canvas id="healthAnalysis"></canvas>
+            </div>
+        </div>
+    </div>
+    </script>
+</body>
+</html>
+</body>
+</html>

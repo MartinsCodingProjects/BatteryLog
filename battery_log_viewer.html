@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Battery Log Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f9f9f9; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: center; }
+        th { background: #eee; }
+    #refresh { margin-bottom: 1em; padding: 0.5em 1em; font-size: 1em; }
+    .proc-cell { font-size: 0.9em; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>Battery Log Viewer</h1>
+    <p>This table displays battery and system statistics logged by your Python script. <br>
+    <b>Column explanations:</b><br>
+    <ul>
+        <li><b>timestamp</b>: Date and time of the log entry</li>
+        <li><b>percentage</b>: Battery charge percentage</li>
+        <li><b>time_left_hms</b>: Estimated time left on battery (hh:mm:ss)</li>
+        <li><b>power_plugged</b>: Whether the charger is plugged in (True/False)</li>
+        <li><b>script_runtime_hms</b>: How long the logger script has been running (hh:mm:ss)</li>
+        <li><b>cpu_percent</b>: Total CPU usage (%)</li>
+        <li><b>ram_percent</b>: Total RAM usage (%)</li>
+        <li><b>disk_percent</b>: Disk usage (%) of system drive</li>
+        <li><b>brightness_percent</b>: Display brightness (%) - Major battery impact</li>
+        <li><b>network_activity_mb</b>: Network data transfer per interval (MB)</li>
+        <li><b>temperature_c</b>: System temperature (°C) - Heat affects battery efficiency</li>
+        <li><b>charge_time_min</b>: Estimated time to full charge (minutes) when plugged in</li>
+        <li><b>charge_status</b>: Charging status (Full, Nearly Full, Fast Charging, Charging)</li>
+        <li><b>power_consumption_w</b>: Estimated power consumption (watts)</li>
+        <li><b>battery_change_rate</b>: Rate of battery change (% per minute)</li>
+        <li><b>top_10_processes</b>: Top 10 CPU-consuming processes at the time (name:usage%)</li>
+    </ul>
+    </p>
+    <button id="refresh">Refresh</button>
+    <table id="logTable">
+        <thead>
+            <tr id="headerRow"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <script>
+        async function fetchCSV() {
+            const response = await fetch('battery_log.csv');
+            if (!response.ok) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="16">Could not load CSV file.</td></tr>';
+                return;
+            }
+            const text = await response.text();
+            const rows = text.trim().split('\n').map(row => row.split(','));
+            const header = rows[0];
+            const data = rows.slice(1);
+            // Set header (static, always shown)
+            const headerRow = document.getElementById('headerRow');
+            headerRow.innerHTML = '';
+            [
+                'timestamp',
+                'percentage',
+                'time_left_hms',
+                'power_plugged',
+                'script_runtime_hms',
+                'cpu_percent',
+                'ram_percent',
+                'disk_percent',
+                'brightness_percent',
+                'network_activity_mb',
+                'temperature_c',
+                'charge_time_min',
+                'charge_status',
+                'power_consumption_w',
+                'battery_change_rate',
+                'top_10_processes'
+            ].forEach(h => {
+                const th = document.createElement('th');
+                th.textContent = h;
+                headerRow.appendChild(th);
+            });
+            // Sort data by timestamp descending (newest first)
+            const sortedData = data.slice().sort((a, b) => {
+                // Compare as strings, works for ISO-like timestamps
+                if (a[0] > b[0]) return -1;
+                if (a[0] < b[0]) return 1;
+                return 0;
+            });
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            sortedData.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, idx) => {
+                    const td = document.createElement('td');
+                    if(header[idx] === 'top_10_processes') {
+                        td.className = 'proc-cell';
+                    }
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+        document.getElementById('refresh').onclick = fetchCSV;
+        // Initial load
+        fetchCSV();
+    </script>
+</body>
+</html>
