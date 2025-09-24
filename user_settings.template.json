@@ -1,0 +1,11 @@
+{
+    "logging": {
+        "log_interval": 60
+    },
+    "visualization": {
+        "time_range": "1h",
+        "custom_date": null,
+        "auto_refresh": true,
+        "refresh_interval": 60000
+    }
+}

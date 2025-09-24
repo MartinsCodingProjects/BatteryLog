@@ -4,6 +4,9 @@
 # Ignore battery calibration guide
 battery_calibration_guide.md
 
+# Ignore user settings
+user_settings.json
+
 # Ignore Python cache files
 __pycache__/
 *.py[cod]

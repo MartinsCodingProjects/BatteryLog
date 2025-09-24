@@ -3,8 +3,75 @@
 Configuration settings for the Battery Logger
 """
 
+import json
+import os
+from pathlib import Path
+
+# Get the project root directory
+PROJECT_ROOT = Path(__file__).parent.parent
+USER_SETTINGS_FILE = PROJECT_ROOT / "user_settings.json"
+
+def load_user_settings():
+    """Load user settings from JSON file, create with defaults if not exists"""
+    default_settings = {
+        "logging": {
+            "log_interval": 60
+        },
+        "visualization": {
+            "time_range": "1h",
+            "custom_date": None,
+            "auto_refresh": True,
+            "refresh_interval": 60000
+        }
+    }
+    
+    try:
+        if USER_SETTINGS_FILE.exists():
+            with open(USER_SETTINGS_FILE, 'r') as f:
+                settings = json.load(f)
+                # Merge with defaults to ensure all keys exist
+                for key in default_settings:
+                    if key not in settings:
+                        settings[key] = default_settings[key]
+                    elif isinstance(default_settings[key], dict):
+                        for subkey in default_settings[key]:
+                            if subkey not in settings[key]:
+                                settings[key][subkey] = default_settings[key][subkey]
+                return settings
+        else:
+            # Create default settings file
+            save_user_settings(default_settings)
+            return default_settings
+    except Exception as e:
+        print(f"Warning: Failed to load user settings: {e}")
+        return default_settings
+
+def save_user_settings(settings):
+    """Save user settings to JSON file"""
+    try:
+        with open(USER_SETTINGS_FILE, 'w') as f:
+            json.dump(settings, f, indent=4)
+    except Exception as e:
+        print(f"Warning: Failed to save user settings: {e}")
+
+def get_setting(category, key, default=None):
+    """Get a specific setting value"""
+    settings = load_user_settings()
+    return settings.get(category, {}).get(key, default)
+
+def update_setting(category, key, value):
+    """Update a specific setting value"""
+    settings = load_user_settings()
+    if category not in settings:
+        settings[category] = {}
+    settings[category][key] = value
+    save_user_settings(settings)
+
+# Load user settings
+USER_SETTINGS = load_user_settings()
+
 # Logging configuration
-LOG_INTERVAL = 60  # seconds between log entries
+LOG_INTERVAL = USER_SETTINGS['logging']['log_interval']  # seconds between log entries
 LOG_FILE = "battery_log.csv"
 
 # Battery monitoring thresholds
