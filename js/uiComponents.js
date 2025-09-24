@@ -63,21 +63,40 @@ function displayMetrics(latest, estimations) {
         const confidence = Math.round((estimations.time_left.confidence || 0) * 100);
         const confidenceColor = confidence > 70 ? '#2ECC40' : confidence > 40 ? '#FF851B' : '#FF4136';
         
+        const lastConfidence = Math.round((estimations.time_left_last_interval?.confidence || 0) * 100);
+        const lastConfidenceColor = lastConfidence > 70 ? '#2ECC40' : lastConfidence > 40 ? '#FF851B' : '#FF4136';
+        
         estimationsHTML = `
             <div class="metric-card estimation">
-                <div class="metric-label">🔋 Estimated Time Left</div>
+                <div class="metric-label">🔋 Estimated Time Left (Average)</div>
                 <div class="metric-value">${formatEstimationTime(estimations.time_left.time_left_minutes)}</div>
                 <div class="metric-details">
                     Based on ${estimations.time_left.intervals_used} historical intervals<br>
                     <span style="color: ${confidenceColor}">Confidence: ${confidence}%</span>
                 </div>
             </div>
+            <div class="metric-card estimation-last">
+                <div class="metric-label">🔋 Time Left (Current Trend)</div>
+                <div class="metric-value">${formatEstimationTime(estimations.time_left_last_interval?.time_left_minutes)}</div>
+                <div class="metric-details">
+                    Based on most recent battery usage<br>
+                    <span style="color: ${lastConfidenceColor}">Confidence: ${lastConfidence}%</span>
+                </div>
+            </div>
             <div class="metric-card estimation">
-                <div class="metric-label">⚡ Full Battery Time</div>
+                <div class="metric-label">⚡ Full Battery Time (Average)</div>
                 <div class="metric-value">${formatEstimationTime(estimations.full_battery.full_battery_time_minutes)}</div>
                 <div class="metric-details">
-                    Estimated runtime if fully charged<br>
+                    Average runtime if fully charged<br>
                     <span style="color: ${confidenceColor}">Drain rate: ${(estimations.full_battery.average_drain_rate * 60).toFixed(2)}%/hr</span>
+                </div>
+            </div>
+            <div class="metric-card estimation-last">
+                <div class="metric-label">⚡ Full Battery Time (Current Trend)</div>
+                <div class="metric-value">${formatEstimationTime(estimations.full_battery_last_interval?.full_battery_time_minutes)}</div>
+                <div class="metric-details">
+                    Based on current usage pattern<br>
+                    <span style="color: ${lastConfidenceColor}">Drain rate: ${(estimations.full_battery_last_interval?.drain_rate * 60).toFixed(2)}%/hr</span>
                 </div>
             </div>`;
     }

@@ -143,6 +143,21 @@ h1 {
     color: #2ECC40;
 }
 
+/* Special styling for last interval estimation cards */
+.metric-card.estimation-last {
+    border-left: 4px solid #0074D9;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.metric-card.estimation-last .metric-label {
+    color: #0074D9;
+    font-weight: 600;
+}
+
+.metric-card.estimation-last .metric-value {
+    color: #0074D9;
+}
+
 .metric-label {
     font-size: 0.9em;
     color: #666;

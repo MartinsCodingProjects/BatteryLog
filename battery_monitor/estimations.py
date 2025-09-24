@@ -92,10 +92,11 @@ def get_weighted_average_drain_rate(data):
     durations = []
     recent_weight_multiplier = []
 
-    # Calculate recency weights (more recent intervals get higher weight)
-    total_intervals = len(intervals)
+    # Use only the last 10 intervals for more recent/relevant data
+    recent_intervals = intervals[-10:] if len(intervals) > 10 else intervals
+    total_intervals = len(recent_intervals)
     
-    for i, (start, end) in enumerate(intervals):
+    for i, (start, end) in enumerate(recent_intervals):
         start_percent = data['percentage'].iloc[start]
         end_percent = data['percentage'].iloc[end]
         start_time = data['timestamp'].iloc[start]
@@ -109,11 +110,11 @@ def get_weighted_average_drain_rate(data):
             # Weight by duration (longer intervals are more reliable)
             duration_weight = min(time_diff, 120)  # Cap at 2 hours to prevent single long intervals from dominating
             
-            # Recent intervals get higher weight
-            recency_weight = (i + 1) / total_intervals  # Linear increase from oldest to newest
+            # Recent intervals get exponentially higher weight
+            recency_weight = pow(2, i)  # Exponential increase: 1, 2, 4, 8, 16...
             
             # Combined weight
-            combined_weight = duration_weight * (1 + recency_weight)
+            combined_weight = duration_weight * recency_weight
             
             drain_rates.append(drain_rate)
             weights.append(combined_weight)
@@ -188,15 +189,115 @@ def estimate_time_on_full_battery(data):
     }
 
 
+def estimate_time_left_last_interval(data):
+    """
+    Estimate time left based only on the most recent battery interval.
+    
+    Returns:
+        dict: Contains 'time_left_minutes', 'confidence', 'drain_rate' based on last interval only
+    """
+    # Convert timestamp to datetime if it's not already
+    if not pd.api.types.is_datetime64_any_dtype(data['timestamp']):
+        data['timestamp'] = pd.to_datetime(data['timestamp'])
+    
+    # Find the last continuous battery interval
+    last_interval = None
+    start_idx = None
+    max_gap_minutes = 5
+    
+    for i in range(len(data) - 1, 0, -1):  # Search backwards
+        current_plugged = data['power_plugged'].iloc[i]
+        prev_plugged = data['power_plugged'].iloc[i-1]
+        
+        # Check for time gap
+        time_gap = (data['timestamp'].iloc[i] - data['timestamp'].iloc[i-1]).total_seconds() / 60
+        
+        if current_plugged == False and prev_plugged == False and time_gap <= max_gap_minutes:
+            if start_idx is None:
+                start_idx = i  # End of interval (searching backwards)
+        else:
+            if start_idx is not None:
+                last_interval = (i, start_idx)  # (start, end) of last interval
+                break
+    
+    # Handle case where we're currently in a battery interval
+    if start_idx is not None and last_interval is None:
+        # Find the beginning of this interval
+        for j in range(start_idx - 1, -1, -1):
+            if j == 0 or data['power_plugged'].iloc[j] == True:
+                last_interval = (j + 1 if j > 0 else 0, start_idx)
+                break
+    
+    if not last_interval:
+        return {
+            'time_left_minutes': None,
+            'confidence': 0,
+            'drain_rate': None
+        }
+    
+    start, end = last_interval
+    start_percent = data['percentage'].iloc[start]
+    end_percent = data['percentage'].iloc[end]
+    current_percent = data['percentage'].iloc[-1]
+    start_time = data['timestamp'].iloc[start]
+    end_time = data['timestamp'].iloc[end]
+    time_diff = (end_time - start_time).total_seconds() / 60  # in minutes
+    
+    if time_diff >= 2 and start_percent > end_percent and (start_percent - end_percent) >= 0.5:
+        drain_rate = (start_percent - end_percent) / time_diff  # % per minute
+        time_left = current_percent / drain_rate if drain_rate > 0 else None
+        
+        # Confidence based on interval duration (longer = more confident)
+        confidence = min(time_diff / 30.0, 1.0)  # Max confidence at 30+ minutes
+        
+        return {
+            'time_left_minutes': time_left,
+            'confidence': confidence,
+            'drain_rate': drain_rate
+        }
+    
+    return {
+        'time_left_minutes': None,
+        'confidence': 0,
+        'drain_rate': None
+    }
+
+def estimate_full_battery_last_interval(data):
+    """
+    Estimate full battery time based only on the most recent battery interval.
+    
+    Returns:
+        dict: Contains 'full_battery_time_minutes', 'confidence', 'drain_rate'
+    """
+    last_interval_result = estimate_time_left_last_interval(data)
+    
+    if last_interval_result['drain_rate'] is not None and last_interval_result['drain_rate'] > 0:
+        full_battery_time = 100 / last_interval_result['drain_rate']  # in minutes
+        return {
+            'full_battery_time_minutes': full_battery_time,
+            'confidence': last_interval_result['confidence'],
+            'drain_rate': last_interval_result['drain_rate']
+        }
+    
+    return {
+        'full_battery_time_minutes': None,
+        'confidence': 0,
+        'drain_rate': None
+    }
+
 def get_battery_estimations(data):
     """
     Get comprehensive battery time estimations based on historical data.
     
     Returns:
-        dict: Contains both current time left and full battery estimations
+        dict: Contains both averaged and last-interval estimations
     """
     time_left_result = estimate_time_left_data_based(data)
     full_battery_result = estimate_time_on_full_battery(data)
+    
+    # New: Last interval estimations
+    time_left_last = estimate_time_left_last_interval(data)
+    full_battery_last = estimate_full_battery_last_interval(data)
     
     current_percentage = data['percentage'].iloc[-1] if len(data) > 0 else 0
     
@@ -204,5 +305,7 @@ def get_battery_estimations(data):
         'current_percentage': current_percentage,
         'time_left': time_left_result,
         'full_battery': full_battery_result,
+        'time_left_last_interval': time_left_last,
+        'full_battery_last_interval': full_battery_last,
         'timestamp': data['timestamp'].iloc[-1].isoformat() if len(data) > 0 else None
     }
