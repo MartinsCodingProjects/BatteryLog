@@ -158,6 +158,84 @@ h1 {
     color: #0074D9;
 }
 
+/* Interval details styling */
+.interval-details-container {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.interval-toggle {
+    background: rgba(0, 116, 217, 0.1);
+    border: 1px solid #0074D9;
+    border-radius: 4px;
+    color: #0074D9;
+    cursor: pointer;
+    display: block;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.interval-toggle:hover {
+    background: rgba(0, 116, 217, 0.2);
+}
+
+.interval-toggle.expanded {
+    background: rgba(0, 116, 217, 0.15);
+    border-color: #005aa3;
+}
+
+.toggle-arrow {
+    float: right;
+    font-size: 0.8em;
+    transition: transform 0.2s ease;
+}
+
+.interval-details {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-top: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.interval-table {
+    border-collapse: collapse;
+    font-size: 0.8em;
+    width: 100%;
+}
+
+.interval-table th,
+.interval-table td {
+    border: 1px solid #dee2e6;
+    padding: 4px 6px;
+    text-align: left;
+}
+
+.interval-table th {
+    background: #e9ecef;
+    font-weight: 600;
+}
+
+.interval-row.latest-interval {
+    background: rgba(46, 204, 64, 0.1);
+}
+
+.latest-label {
+    background: #2ECC40;
+    border-radius: 3px;
+    color: white;
+    font-size: 0.7em;
+    font-weight: bold;
+    margin-left: 5px;
+    padding: 2px 4px;
+}
+
 .metric-label {
     font-size: 0.9em;
     color: #666;

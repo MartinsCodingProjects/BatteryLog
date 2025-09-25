@@ -22,10 +22,11 @@ def estimate_time_left_data_based(data):
             'time_left_minutes': None,
             'confidence': 0,
             'intervals_used': 0,
-            'average_drain_rate': None
+            'average_drain_rate': None,
+            'interval_details': []
         }
     
-    average_drain_rate, confidence, intervals_used = result
+    average_drain_rate, confidence, intervals_used, interval_details = result
     current_battery_percent = data['percentage'].iloc[-1]  # read latest battery percentage from data in battery_log.csv
     
     if average_drain_rate is not None and average_drain_rate > 0:
@@ -34,14 +35,16 @@ def estimate_time_left_data_based(data):
             'time_left_minutes': time_left,
             'confidence': confidence,
             'intervals_used': intervals_used,
-            'average_drain_rate': average_drain_rate
+            'average_drain_rate': average_drain_rate,
+            'interval_details': interval_details
         }
     
     return {
         'time_left_minutes': None,
         'confidence': 0,
         'intervals_used': intervals_used,
-        'average_drain_rate': None
+        'average_drain_rate': None,
+        'interval_details': interval_details
     }
 
 def get_weighted_average_drain_rate(data):
@@ -127,6 +130,21 @@ def get_weighted_average_drain_rate(data):
     # Calculate weighted average
     weighted_average = sum(rate * weight for rate, weight in zip(drain_rates, weights)) / sum(weights)
     
+    # Prepare interval details for frontend
+    interval_details = []
+    for i, (start, end) in enumerate(recent_intervals):
+        if i < len(drain_rates):  # Only include intervals that were actually used
+            interval_details.append({
+                'start_time': data['timestamp'].iloc[start].isoformat(),
+                'end_time': data['timestamp'].iloc[end].isoformat(),
+                'duration_minutes': durations[i],
+                'data_points': end - start + 1,
+                'start_percentage': float(data['percentage'].iloc[start]),
+                'end_percentage': float(data['percentage'].iloc[end]),
+                'drain_rate': drain_rates[i],
+                'weight': weights[i]
+            })
+    
     # Calculate confidence score based on:
     # 1. Number of intervals
     # 2. Total duration of data
@@ -149,7 +167,7 @@ def get_weighted_average_drain_rate(data):
     # Overall confidence (0-1 scale)
     confidence = (interval_confidence * 0.4 + duration_confidence * 0.3 + consistency_confidence * 0.3)
     
-    return weighted_average, confidence, num_intervals
+    return weighted_average, confidence, num_intervals, interval_details
 
 def estimate_time_on_full_battery(data):
     """
@@ -167,10 +185,11 @@ def estimate_time_on_full_battery(data):
             'full_battery_time_minutes': None,
             'confidence': 0,
             'intervals_used': 0,
-            'average_drain_rate': None
+            'average_drain_rate': None,
+            'interval_details': []
         }
     
-    average_drain_rate, confidence, intervals_used = result
+    average_drain_rate, confidence, intervals_used, interval_details = result
     
     if average_drain_rate is not None and average_drain_rate > 0:
         total_time_on_full_battery = 100 / average_drain_rate  # in minutes
@@ -178,14 +197,16 @@ def estimate_time_on_full_battery(data):
             'full_battery_time_minutes': total_time_on_full_battery,
             'confidence': confidence,
             'intervals_used': intervals_used,
-            'average_drain_rate': average_drain_rate
+            'average_drain_rate': average_drain_rate,
+            'interval_details': interval_details
         }
     
     return {
         'full_battery_time_minutes': None,
         'confidence': 0,
         'intervals_used': intervals_used,
-        'average_drain_rate': None
+        'average_drain_rate': None,
+        'interval_details': interval_details
     }
 
 
@@ -272,14 +293,26 @@ def estimate_time_left_last_interval(data):
             'time_left_minutes': time_left,
             'confidence': confidence,
             'drain_rate': drain_rate,
-            'debug': f'Interval: {start}-{end}, Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%'
+            'debug': f'Interval: {start}-{end}, Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%',
+            'interval_details': [{
+                'start_time': start_time.isoformat(),
+                'end_time': end_time.isoformat(),
+                'duration_minutes': time_diff,
+                'data_points': end - start + 1,
+                'start_percentage': float(start_percent),
+                'end_percentage': float(end_percent),
+                'drain_rate': drain_rate,
+                'weight': 1.0,
+                'is_latest': True
+            }]
         }
     
     return {
         'time_left_minutes': None,
         'confidence': 0,
         'drain_rate': None,
-        'debug': f'Invalid interval: Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%'
+        'debug': f'Invalid interval: Duration: {time_diff:.1f}min, Drop: {start_percent-end_percent:.1f}%',
+        'interval_details': []
     }
 
 def estimate_full_battery_last_interval(data):
@@ -296,13 +329,15 @@ def estimate_full_battery_last_interval(data):
         return {
             'full_battery_time_minutes': full_battery_time,
             'confidence': last_interval_result['confidence'],
-            'drain_rate': last_interval_result['drain_rate']
+            'drain_rate': last_interval_result['drain_rate'],
+            'interval_details': last_interval_result.get('interval_details', [])
         }
     
     return {
         'full_battery_time_minutes': None,
         'confidence': 0,
-        'drain_rate': None
+        'drain_rate': None,
+        'interval_details': last_interval_result.get('interval_details', [])
     }
 
 def get_battery_estimations(data):

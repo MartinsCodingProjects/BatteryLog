@@ -58,6 +58,59 @@ function displayMetrics(latest, estimations) {
         return `${hours}h ${mins}m`;
     }
     
+    // Create interval details HTML
+    function createIntervalDetailsHTML(intervals, isLatest = false, title = "Intervals Used") {
+        if (!intervals || intervals.length === 0) return '';
+        
+        const intervalRows = intervals.map((interval, index) => {
+            const startTime = new Date(interval.start_time).toLocaleString();
+            const endTime = new Date(interval.end_time).toLocaleString();
+            const latestClass = (isLatest || interval.is_latest) ? ' latest-interval' : '';
+            const latestLabel = (isLatest || interval.is_latest) ? ' <span class="latest-label">LATEST</span>' : '';
+            
+            return `
+                <tr class="interval-row${latestClass}">
+                    <td>${index + 1}${latestLabel}</td>
+                    <td>${startTime}</td>
+                    <td>${endTime}</td>
+                    <td>${interval.duration_minutes.toFixed(1)}</td>
+                    <td>${interval.data_points}</td>
+                    <td>${interval.start_percentage.toFixed(1)}% → ${interval.end_percentage.toFixed(1)}%</td>
+                    <td>${(interval.drain_rate * 60).toFixed(2)}%/hr</td>
+                </tr>
+            `;
+        }).join('');
+        
+        const detailsId = `details-${Math.random().toString(36).substr(2, 9)}`;
+        
+        return `
+            <div class="interval-details-container">
+                <button class="interval-toggle" onclick="toggleIntervalDetails('${detailsId}')">
+                    📊 ${title} (${intervals.length}) 
+                    <span class="toggle-arrow">▼</span>
+                </button>
+                <div id="${detailsId}" class="interval-details" style="display: none;">
+                    <table class="interval-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Duration (min)</th>
+                                <th>Data Points</th>
+                                <th>Battery Drop</th>
+                                <th>Drain Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${intervalRows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
     // Build estimations HTML
     let estimationsHTML = '';
     if (estimations && estimations.time_left) {
@@ -74,6 +127,7 @@ function displayMetrics(latest, estimations) {
                 <div class="metric-details">
                     Based on ${estimations.time_left.intervals_used} historical intervals<br>
                     <span style="color: ${confidenceColor}">Confidence: ${confidence}%</span>
+                    ${createIntervalDetailsHTML(estimations.time_left.interval_details, false, "Historical Intervals")}
                 </div>
             </div>
             <div class="metric-card estimation-last">
@@ -83,6 +137,7 @@ function displayMetrics(latest, estimations) {
                     Based on most recent battery usage<br>
                     <span style="color: ${lastConfidenceColor}">Confidence: ${lastConfidence}%</span>
                     ${estimations.time_left_last_interval?.debug ? '<br><small>Debug: ' + estimations.time_left_last_interval.debug + '</small>' : ''}
+                    ${createIntervalDetailsHTML(estimations.time_left_last_interval?.interval_details, true, "Latest Interval")}
                 </div>
             </div>
             <div class="metric-card estimation">
@@ -91,6 +146,7 @@ function displayMetrics(latest, estimations) {
                 <div class="metric-details">
                     Average runtime if fully charged<br>
                     <span style="color: ${confidenceColor}">Drain rate: ${(estimations.full_battery.average_drain_rate * 60).toFixed(2)}%/hr</span>
+                    ${createIntervalDetailsHTML(estimations.full_battery.interval_details, false, "Historical Intervals")}
                 </div>
             </div>
             <div class="metric-card estimation-last">
@@ -100,6 +156,7 @@ function displayMetrics(latest, estimations) {
                     Based on current usage pattern<br>
                     <span style="color: ${lastConfidenceColor}">Drain rate: ${(estimations.full_battery_last_interval?.drain_rate * 60 || 0).toFixed(2)}%/hr</span>
                     ${estimations.full_battery_last_interval?.debug ? '<br><small>Debug: ' + estimations.full_battery_last_interval.debug + '</small>' : ''}
+                    ${createIntervalDetailsHTML(estimations.full_battery_last_interval?.interval_details, true, "Latest Interval")}
                 </div>
             </div>`;
     }
@@ -153,3 +210,20 @@ function displayMetrics(latest, estimations) {
         </div>
     `;
 }
+
+// Global function to toggle interval details (needed for onclick)
+window.toggleIntervalDetails = function(detailsId) {
+    const details = document.getElementById(detailsId);
+    const button = details.previousElementSibling;
+    const arrow = button.querySelector('.toggle-arrow');
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        arrow.textContent = '▲';
+        button.classList.add('expanded');
+    } else {
+        details.style.display = 'none';
+        arrow.textContent = '▼';
+        button.classList.remove('expanded');
+    }
+};

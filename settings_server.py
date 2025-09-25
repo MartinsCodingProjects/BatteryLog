@@ -129,12 +129,34 @@ class CombinedHandler(SimpleHTTPRequestHandler):
 
 def run_settings_server():
     """Run a simple HTTP server for settings updates"""
+    import signal
+    import sys
+    
+    server = None
+    
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully"""
+        print("Settings server shutting down...")
+        if server:
+            server.shutdown()
+        sys.exit(0)
+    
+    # Set up signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     try:
         server = HTTPServer(('localhost', 8081), CombinedHandler)
         print("Settings server running on http://localhost:8081")
         server.serve_forever()
+    except KeyboardInterrupt:
+        print("Settings server interrupted")
     except Exception as e:
         print(f"Settings server error: {e}")
+    finally:
+        if server:
+            server.server_close()
+            print("Settings server stopped")
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))  # Serve files from the current directory
